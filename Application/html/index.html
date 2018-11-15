@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+    <link rel="stylesheet" href="../src/leaflet-areaselect.css" />
+
+
+
+
+
+
+</head>
+<body>
+    <div id="map"></div>
+    <div id="result">
+
+        <div class="left">
+            <p id="area_display" align="centre">Area Display</p>
+            Price in AUD to Resurface one meter squared:<br>
+            <input type = "number" class = "price" value = 1 width = 20%>
+        </div>
+        <div class="right">
+            Bounding Box Width (meters):<br>
+            <input type="number" id = "width" class="width" /><br>
+
+            Bounding Box Height (meters):<br>
+            <input type="number" id = "height" class="height" />
+            <button id="setDimensions">Set Dimensions</button>
+        </div>
+
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+
+
+    <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+
+
+    <!-- Load Esri Leaflet from CDN -->
+    <script src="https://unpkg.com/esri-leaflet@2.1.3/dist/esri-leaflet.js"
+    integrity="sha512-pijLQd2FbV/7+Jwa86Mk3ACxnasfIMzJRrIlVQsuPKPCfUBCDMDUoLiBQRg7dAQY6D1rkmCcR8286hVTn/wlIg=="
+    crossorigin=""></script>
+
+
+ <script src="../src/leaflet-areaselect.js"></script>
+    <script>
+        function measure(lat1, lon1, lat2, lon2){  // Haversine Formula
+            var R = 6378.137; // Radius of earth in KM
+            var dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
+            var dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            var d = R * c;
+            return d * 1000; // meters
+        }
+
+        var sw_lat, sw_long, ne_lat, ne_long, center_lat, center_long, zoom, area;
+
+
+     //   var map = L.map('map').setView([38, 0], 4);
+     //   L.tileLayer('http://{s}.tile.cloudmade.com/70146506bc514228adc1756788c730d3/997/256/{z}/{x}/{y}.png', {attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, Imagery &copy; <a href="http://cloudmade.com">CloudMade</a>', maxZoom: 18}).addTo(map);
+
+	  var map = L.map("map", {
+            crs: L.CRS.EPSG3857
+        }).setView([-37.8136, 144.9631], 12);
+              //.setView([-38.27268853598096, 143.30566406250003], 4);
+
+	  L.control.scale().addTo(map);
+
+	    var areaSelect = L.areaSelect({width:200, height:250});
+        areaSelect.on("change", function() {
+            var bounds = this.getBounds();
+            sw_lat = bounds.getSouthWest().lat;
+            sw_long = bounds.getSouthWest().lng;
+            ne_lat = bounds.getNorthEast().lat;
+            ne_long = bounds.getNorthEast().lng;
+            center_lat = bounds.getCenter().lat;
+            center_long = bounds.getCenter().lng;
+
+            // Find the diagonal - distance from sw to ne
+
+            var diagonal = measure(sw_lat, sw_long, ne_lat, ne_long);
+            var b_width = diagonal * Math.sin(Math.PI/4);
+            var b_height = diagonal * Math.cos(Math.PI/4);
+
+            var area_message = "The selected area is: ";
+            area = Math.round((b_width * b_height));
+            area_message += area.toString() +" meters^2";
+            document.getElementById("area_display").innerHTML = area_message;
+
+
+            //$("#result .sw").val(sw_lat + ", " + sw_long);
+            //$("#result .ne").val(ne_lat + ", " + ne_long);
+        });
+        areaSelect.addTo(map);
+
+	 // map.panTo(new L.LatLng(-37.857507156252034, -216.441650390625));
+
+	   /* var defined_roads = L.esri.featureLayer({
+        url: "https://services2.arcgis.com/18ajPSI0b3ppsmMt/arcgis/rest/services/Road_Width_and_Number_of_Lanes/FeatureServer/0",
+        style: function () {
+          return { color: "#70ca49", weight: 2 };
+        }
+      }).addTo(map);*/
+
+	    L.esri.basemapLayer("Topographic").addTo(map);
+
+
+        var ESK = 1;
+        $("#remove").click(function() {
+            areaSelect.remove();
+        });
+        $("#setDimensions").click(function () {
+            document.getElementById('height').style.borderColor = "green";
+            document.getElementById('width').style.borderColor = "green";
+
+            var width = $('.width').val();
+            var height = $('.height').val();
+            if(width <= 0 || width.length == 0){
+                document.getElementById('width').style.borderColor = "red";
+                return
+            }
+            if(height <= 0 || height.length == 0){
+                document.getElementById('height').style.borderColor = "red";
+                return
+            }
+
+            areaSelect.setDimensionsMeters({width: $('.width').val(), height: $('.height').val()})
+
+
+        });
+
+        function bounds_f() {
+            return sw_lat + ", " + sw_long + ", " + ne_lat + ", " + ne_long;
+        }
+
+        function get_center() {
+            return center_lat+"," + center_long + "," + area + "," + $('.price').val();
+        }
+
+
+
+    </script>
+
+
+
+</body>
