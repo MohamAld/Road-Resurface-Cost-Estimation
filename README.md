@@ -19,6 +19,7 @@ Navigate to the Application folder
 1. PyQt 5.1 - used for GUI - `pip3 install pyqt5`
 2. Overpy - used to access openstreetmap using Overpass API - `pip3 install overpy`
 3. numpy - maths - `pip3 install numpy`
+4. [leaflet-areaselect]:https://github.com/heyman/leaflet-areaselect
 Extra: A google maps API key for the results page. Optional.
 
 
